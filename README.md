@@ -12,6 +12,27 @@
 
 ---
 
+<div align="center">
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img src="assets/screenshot-dashboard.png" width="100%" alt="대시보드" />
+      <sub><b>대시보드</b></sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="assets/screenshot-accounts.png" width="100%" alt="계좌 목록" />
+      <sub><b>계좌 목록</b></sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="assets/screenshot-templates.png" width="100%" alt="배분 템플릿·목표" />
+      <sub><b>배분 템플릿 · 목표</b></sub>
+    </td>
+  </tr>
+</table>
+</div>
+
+---
+
 ## 핵심 기능
 
 | 기능 | 설명 |
