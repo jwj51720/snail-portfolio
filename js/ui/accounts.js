@@ -84,13 +84,14 @@ function renderAccountCard(acc, archived = false) {
   const starBtn = h('button', {
     className: 'account-card-star' + (acc.isStarred ? ' starred' : ''),
     type: 'button',
-    textContent: acc.isStarred ? '★' : '☆',
+    'aria-label': acc.isStarred ? '즐겨찾기 해제' : '즐겨찾기',
     onclick: e => {
       e.stopPropagation();
       const target = store.accounts.find(a => a.id === acc.id);
       if (target) { target.isStarred = !target.isStarred; saveStore(store); render(); }
     },
   });
+  starBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
   card.appendChild(starBtn);
 
   const body = h('div', { className: 'account-card-body' });
@@ -115,8 +116,8 @@ function renderAccountCard(acc, archived = false) {
 
   // Valuation
   const valEl = h('div', { className: 'account-card-valuation' });
-  valEl.appendChild(h('span', { className: 'card-currency', textContent: '₩' }));
   valEl.appendChild(document.createTextNode(Math.round(valuation).toLocaleString('ko-KR')));
+  valEl.appendChild(h('span', { className: 'card-currency', textContent: '원' }));
   body.appendChild(valEl);
 
   // P/L row — all values are computed from numbers, textContent is safe

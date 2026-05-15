@@ -53,14 +53,14 @@ function renderTemplates() {
 
       const actions = h('div', { className: 'template-card-actions' });
       actions.appendChild(h('button', {
-        className: 'btn btn-sm btn-primary',
-        textContent: '실행',
-        onclick: () => openTemplateExecute(tmpl.id),
-      }));
-      actions.appendChild(h('button', {
         className: 'btn btn-sm btn-secondary',
         textContent: '편집',
         onclick: () => openTemplateModal(tmpl.id),
+      }));
+      actions.appendChild(h('button', {
+        className: 'btn btn-sm btn-primary',
+        textContent: '실행',
+        onclick: () => openTemplateExecute(tmpl.id),
       }));
       actions.appendChild(h('button', {
         className: 'btn btn-sm btn-danger',
@@ -308,6 +308,7 @@ function openGoalModal(goalId) {
 
   // Footer
   const footer = h('div', { className: 'modal-footer' });
+  footer.appendChild(h('button', { className: 'btn btn-secondary', textContent: '취소', onclick: closeModal }));
   if (isEdit) {
     footer.appendChild(h('button', {
       className: 'btn btn-danger',
@@ -321,7 +322,6 @@ function openGoalModal(goalId) {
       },
     }));
   }
-  footer.appendChild(h('button', { className: 'btn btn-secondary', textContent: '취소', onclick: closeModal }));
   footer.appendChild(h('button', {
     className: 'btn btn-primary',
     textContent: isEdit ? '저장' : '추가',

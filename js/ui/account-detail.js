@@ -19,7 +19,6 @@ function renderAccountDetail(accountId) {
   const netDep    = getNetDeposit(accountId, store.transactions);
   const pl        = getProfitLoss(accountId, store.transactions);
   const plClass   = pl > 0 ? 'text-profit' : pl < 0 ? 'text-loss' : 'text-neutral';
-  const plSign    = pl >= 0 ? '+' : '';
 
   // TWR vs simple return
   const useTWR = store.ui.useTWR ?? false;
@@ -67,32 +66,66 @@ function renderAccountDetail(accountId) {
   wrap.appendChild(header);
 
   // ── Stats ────────────────────────────────────────────────────
-  const statsGrid = h('div', { className: 'stats-grid' });
-
   function fmtWon(n) {
-    return '₩' + Math.round(n).toLocaleString('ko-KR');
+    return Math.round(n).toLocaleString('ko-KR') + '원';
   }
 
-  function statCard(label, value, extra = '') {
-    const card = h('div', { className: 'stat-card' });
-    card.appendChild(h('div', { className: 'stat-label', textContent: label }));
-    const val = h('div', { className: 'stat-value' + (extra ? ' ' + extra : '') });
-    val.textContent = value;
-    card.appendChild(val);
-    return card;
+  function fmtWonEl(n, sign = '') {
+    const span = document.createElement('span');
+    span.style.cssText = 'display:inline-flex;align-items:baseline;gap:2px';
+    if (sign) {
+      const s = document.createElement('span');
+      s.textContent = sign;
+      span.appendChild(s);
+    }
+    span.appendChild(document.createTextNode(Math.round(Math.abs(n)).toLocaleString('ko-KR')));
+    const sfx = document.createElement('span');
+    sfx.className = 'stat-amt-suffix';
+    sfx.textContent = '원';
+    span.appendChild(sfx);
+    return span;
   }
 
-  statsGrid.appendChild(statCard('현재 평가액', fmtWon(valuation)));
-  statsGrid.appendChild(statCard('순 투입금',   fmtWon(netDep)));
-  statsGrid.appendChild(statCard('손 익', `${plSign}${fmtWon(pl)}`, plClass));
-  statsGrid.appendChild(statCard(retLabel, `${retSign}${ret.toFixed(2)}%`, plClass));
-  wrap.appendChild(statsGrid);
+  const statPanel = h('div', { className: 'account-stat-panel' });
+
+  // Main: 현재 평가액
+  const mainStat = h('div', { className: 'account-stat-main' });
+  mainStat.appendChild(h('div', { className: 'account-stat-main-label', textContent: '현재 평가액' }));
+  const mainVal = h('div', { className: 'account-stat-main-value' });
+  mainVal.appendChild(document.createTextNode(Math.round(valuation).toLocaleString('ko-KR')));
+  mainVal.appendChild(h('span', { className: 'account-stat-suffix', textContent: '원' }));
+  mainStat.appendChild(mainVal);
+  statPanel.appendChild(mainStat);
+
+  statPanel.appendChild(h('div', { className: 'account-stat-divider' }));
+
+  // Sub row: 순 투입금 / 손익 / 수익률
+  const subRow = h('div', { className: 'account-stat-sub-row' });
+
+  function subStat(label, value, cls = '') {
+    const s = h('div', { className: 'account-stat-sub' });
+    s.appendChild(h('div', { className: 'account-stat-sub-label', textContent: label }));
+    const v = h('div', { className: 'account-stat-sub-value' + (cls ? ' ' + cls : '') });
+    if (value instanceof Node) v.appendChild(value);
+    else v.textContent = value;
+    s.appendChild(v);
+    return s;
+  }
+
+  subRow.appendChild(subStat('순 투입금', fmtWonEl(netDep)));
+  subRow.appendChild(h('div', { className: 'account-stat-vsep' }));
+  subRow.appendChild(subStat('손익', fmtWonEl(pl, pl >= 0 ? '+' : '-'), plClass));
+  subRow.appendChild(h('div', { className: 'account-stat-vsep' }));
+  subRow.appendChild(subStat(retLabel, `${retSign}${ret.toFixed(2)}%`, plClass));
+  statPanel.appendChild(subRow);
+
+  wrap.appendChild(statPanel);
 
   // ── Transaction list ─────────────────────────────────────────
   wrap.appendChild(h('h2', { className: 'txn-section-title', textContent: '거래 내역' }));
 
   const sorted = [...txns].sort((a, b) =>
-    a.date !== b.date ? (a.date > b.date ? -1 : 1) : (a.id > b.id ? -1 : 1)
+    a.date !== b.date ? (a.date > b.date ? -1 : 1) : ((b.createdAt ?? 0) - (a.createdAt ?? 0))
   );
 
   if (sorted.length === 0) {

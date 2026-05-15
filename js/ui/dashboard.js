@@ -287,8 +287,8 @@ function renderHero(totalAssets, ret, plAbs, startInterpolated, periodLabel) {
 
   // Big number
   const totalEl = h('div', { className: 'dash-total-assets' });
-  totalEl.appendChild(h('span', { className: 'dash-total-currency', textContent: '₩' }));
   totalEl.appendChild(document.createTextNode(Math.round(totalAssets).toLocaleString('ko-KR')));
+  totalEl.appendChild(h('span', { className: 'dash-total-currency', textContent: '원' }));
   hero.appendChild(totalEl);
 
   // Return row
@@ -523,8 +523,8 @@ function renderAccountCardHorizontal(acc) {
 
   const bottom = h('div', { className: 'account-card-h-bottom' });
   const valEl = h('div', { className: 'account-card-h-val' });
-  valEl.appendChild(h('span', { className: 'card-currency', textContent: '₩' }));
   valEl.appendChild(document.createTextNode(Math.round(valuation).toLocaleString('ko-KR')));
+  valEl.appendChild(h('span', { className: 'card-currency', textContent: '원' }));
   bottom.appendChild(valEl);
 
   const plEl = h('div', { className: 'account-card-h-pl ' + plClass });

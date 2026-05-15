@@ -46,7 +46,7 @@ function openModal(modalEl) {
   });
 
   const overlay = h('div', { className: 'modal-overlay' }, modalEl);
-  // Overlay click intentionally does NOT close — only Cancel button or Esc closes modals
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
   document.body.appendChild(overlay);
   _activeModal = overlay;
   document.body.style.overflow = 'hidden';
@@ -63,8 +63,8 @@ function closeModal() {
     document.removeEventListener('keydown', _escHandler);
     _escHandler = null;
   }
-  // Clean up any portaled custom-select dropdowns left open
-  document.querySelectorAll('.cselect-dropdown').forEach(el => el.remove());
+  // Clean up any portaled dropdowns left open
+  document.querySelectorAll('.cselect-dropdown, .emoji-picker-panel').forEach(el => el.remove());
   _activeModal.remove();
   _activeModal = null;
   document.body.style.overflow = '';
@@ -82,7 +82,7 @@ function navigate(route, params = {}) {
 const NAV_ITEMS = [
   { label: '대시보드', route: 'dashboard' },
   { label: '계좌 목록', route: 'accounts'  },
-  { label: '템플릿',   route: 'templates' },
+  { label: '플랜',     route: 'templates' },
   { label: '설정',     route: 'settings'  },
 ];
 
@@ -282,10 +282,10 @@ function createCustomSelect(options, currentValue, onChange) {
 }
 
 // ─── Custom Color Picker ──────────────────────────────────────────────────────
-// 8 vivid presets + "?" random + rainbow (HSV picker). No OS native picker.
+// 10 muted presets + rainbow (HSV picker with random button). No OS native picker.
 const _PRESET_COLORS = [
-  '#F03D3D', '#F0844A', '#F0C030', '#00C076',
-  '#00ACC1', '#1557EF', '#7C4EF0', '#E91E63',
+  '#F03D3D', '#F0844A', '#F0C030', '#7CB342', '#00C076',
+  '#00ACC1', '#1557EF', '#5C6BC0', '#7C4EF0', '#E91E63',
 ];
 const _COLOR_PALETTE = _PRESET_COLORS; // backwards-compat alias
 
@@ -321,19 +321,11 @@ function _hsvToHex(h, s, v) {
   return '#' + rgb.map(x => Math.round(x * 255).toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 
-function _colorDist(hex1, hex2) {
-  const a = _hexToRgb(hex1), b = _hexToRgb(hex2);
-  return Math.sqrt((a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2);
-}
-
-function _randomVividColor(exclude) {
-  let best = null, bestDist = -1;
-  for (let i = 0; i < 40; i++) {
-    const c = _hsvToHex(Math.random() * 360, 0.6 + Math.random() * 0.4, 0.55 + Math.random() * 0.45);
-    const d = exclude.length ? Math.min(...exclude.map(e => _colorDist(c, e))) : 999;
-    if (d > bestDist) { best = c; bestDist = d; }
-  }
-  return best;
+function _randomHarmoniousColor() {
+  const h = Math.random() * 360;
+  const s = 0.62 + Math.random() * 0.28;  // 0.62–0.90, matches preset palette tone
+  const v = 0.72 + Math.random() * 0.22;  // 0.72–0.94, not too dark or washed out
+  return _hsvToHex(h, s, v);
 }
 
 function createColorPicker(currentColor, onChange) {
@@ -341,13 +333,12 @@ function createColorPicker(currentColor, onChange) {
     ? currentColor.toUpperCase()
     : _PRESET_COLORS[5]; // default: blue
 
-  let randColor = null;
   let hsvOpen   = false;
   let hsv       = _hexToHsv(color);
 
   const wrap = h('div', { className: 'cpicker' });
 
-  // ── Swatch row (8 presets + ? + rainbow) ──────────────────────
+  // ── Swatch row (9 presets + rainbow) ──────────────────────────
   const swatchRow = h('div', { className: 'cpicker-swatches' });
 
   function closeHsv() {
@@ -365,28 +356,13 @@ function createColorPicker(currentColor, onChange) {
     return sw;
   });
 
-  const randEl = h('button', {
-    className: 'cpicker-swatch cpicker-swatch-rand',
-    type: 'button', textContent: '↺',
-  });
-  randEl.addEventListener('click', () => {
-    closeHsv();
-    randColor = _randomVividColor([..._PRESET_COLORS, ...(randColor ? [randColor] : [])]);
-    randEl.style.background = randColor;
-    pickColor(randColor);
-    syncSwatches();
-  });
-  swatchRow.appendChild(randEl);
-
   const rainbowEl = h('button', { className: 'cpicker-swatch cpicker-swatch-rainbow', type: 'button' });
   rainbowEl.addEventListener('click', () => {
     hsvOpen = !hsvOpen;
     hsvSection.style.display = hsvOpen ? 'flex' : 'none';
     rainbowEl.classList.toggle('active', hsvOpen);
     if (hsvOpen) {
-      // Clear all preset/rand selections — only rainbow is "active"
       presetEls.forEach(sw => sw.classList.remove('selected'));
-      randEl.classList.remove('selected');
       hsv = _hexToHsv(color); updateHsvUI();
     }
   });
@@ -428,8 +404,20 @@ function createColorPicker(currentColor, onChange) {
       onChange(color);
     }
   });
+  const randInHsvBtn = h('button', {
+    className: 'cpicker-rand-btn', type: 'button', title: '랜덤 색상',
+  });
+  randInHsvBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`;
+  randInHsvBtn.addEventListener('click', () => {
+    const newColor = _randomHarmoniousColor();
+    pickColor(newColor);
+    hsv = _hexToHsv(newColor.toUpperCase());
+    updateHsvUI();
+    syncSwatches();
+  });
   hsvBottom.appendChild(preview);
   hsvBottom.appendChild(hexInput);
+  hsvBottom.appendChild(randInHsvBtn);
   hsvSection.appendChild(svArea);
   hsvSection.appendChild(hueBar);
   hsvSection.appendChild(hsvBottom);
@@ -446,7 +434,6 @@ function createColorPicker(currentColor, onChange) {
     const up = color.toUpperCase();
     presetEls.forEach(sw =>
       sw.classList.toggle('selected', sw.dataset.color.toUpperCase() === up));
-    randEl.classList.toggle('selected', randColor != null && randColor.toUpperCase() === up);
   }
 
   function updateHsvUI() {

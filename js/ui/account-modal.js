@@ -55,8 +55,37 @@ function openAccountModal(accountId = null) {
   emojiBtn.appendChild(emojiBtnInner);
 
   let emojiPanelOpen = false;
-  const emojiPanel = h('div', { className: 'emoji-picker-panel emoji-panel-inline' });
-  emojiPanel.style.display = 'none';
+  const emojiPanel = h('div', { className: 'emoji-picker-panel' });
+  let _emojiOutsideHandler = null;
+
+  function closeEmojiPanel() {
+    if (!emojiPanelOpen) return;
+    emojiPanelOpen = false;
+    if (emojiPanel.isConnected) emojiPanel.remove();
+    if (_emojiOutsideHandler) {
+      document.removeEventListener('click', _emojiOutsideHandler);
+      _emojiOutsideHandler = null;
+    }
+  }
+
+  function openEmojiPanel() {
+    emojiPanelOpen = true;
+    const rect = emojiBtn.getBoundingClientRect();
+    // Position: below button, clamp to right edge of viewport
+    const left = Math.min(rect.left, window.innerWidth - 308);
+    Object.assign(emojiPanel.style, {
+      position: 'fixed',
+      top: (rect.bottom + 6) + 'px',
+      left: Math.max(8, left) + 'px',
+      width: '300px',
+      zIndex: '2000',
+    });
+    document.body.appendChild(emojiPanel);
+    _emojiOutsideHandler = e => {
+      if (!emojiBtn.contains(e.target) && !emojiPanel.contains(e.target)) closeEmojiPanel();
+    };
+    setTimeout(() => document.addEventListener('click', _emojiOutsideHandler), 0);
+  }
 
   const emojiGrid = h('div', { className: 'emoji-grid' });
   _ACCOUNT_EMOJIS.forEach(em => {
@@ -67,8 +96,7 @@ function openAccountModal(accountId = null) {
       emojiBtnInner.textContent = em;
       emojiGrid.querySelectorAll('.emoji-item').forEach(el =>
         el.classList.toggle('selected', el.textContent === em));
-      emojiPanelOpen = false;
-      emojiPanel.style.display = 'none';
+      closeEmojiPanel();
     });
     emojiGrid.appendChild(item);
   });
@@ -79,20 +107,17 @@ function openAccountModal(accountId = null) {
       selectedEmoji = '';
       emojiBtnInner.textContent = '';
       emojiGrid.querySelectorAll('.emoji-item').forEach(el => el.classList.remove('selected'));
-      emojiPanelOpen = false;
-      emojiPanel.style.display = 'none';
+      closeEmojiPanel();
     },
   });
 
   emojiBtn.addEventListener('click', () => {
-    emojiPanelOpen = !emojiPanelOpen;
-    emojiPanel.style.display = emojiPanelOpen ? '' : 'none';
+    emojiPanelOpen ? closeEmojiPanel() : openEmojiPanel();
   });
 
   emojiPanel.appendChild(emojiGrid);
   emojiPanel.appendChild(emojiClearBtn);
   emojiWrap.appendChild(emojiBtn);
-  emojiWrap.appendChild(emojiPanel);
   nameRow.appendChild(emojiWrap);
 
   const nameInput = h('input', { type: 'text', className: 'form-input', placeholder: '예: 삼성증권 메인' });
@@ -142,6 +167,16 @@ function openAccountModal(accountId = null) {
   noteGroup.appendChild(noteInput);
   modal.appendChild(noteGroup);
 
+  // ── Opening Date ─────────────────────────────────────────────
+  const openDateGroup = h('div', { className: 'form-group' });
+  openDateGroup.appendChild(h('label', { className: 'form-label', textContent: '개설일' }));
+  openDateGroup.appendChild(h('p', { className: 'form-hint', textContent: '계좌 개설일 (선택 사항). 초기 금액 거래일로 사용됩니다.' }));
+  const openDateInput = h('input', { type: 'text', className: 'form-input', placeholder: toDateStr(new Date()) });
+  openDateInput.style.marginTop = '8px';
+  openDateInput.value = acc?.openedAt ?? '';
+  openDateGroup.appendChild(openDateInput);
+  modal.appendChild(openDateGroup);
+
   // ── Seed Amount (shown in both create and edit) ───────────────────────────────
   const existingSeed = isEdit
     ? store.transactions.find(t => t.accountId === accountId && t.isSeed)
@@ -155,6 +190,7 @@ function openAccountModal(accountId = null) {
       : '계좌 개설 시 초기 잔액 (선택 사항)';
     seedGroup.appendChild(h('p', { className: 'form-hint', textContent: hintText }));
     seedInput = h('input', { type: 'text', className: 'form-input', placeholder: '0' });
+    seedInput.style.marginTop = '8px';
     const seedHint = h('p', { className: 'goal-amt-hint' });
     if (existingSeed) {
       seedInput.value = existingSeed.amount.toLocaleString('ko-KR');
@@ -231,6 +267,7 @@ function openAccountModal(accountId = null) {
           target.color    = finalColor;
           target.note     = noteInput.value.trim();
           target.emoji    = selectedEmoji;
+          target.openedAt = openDateInput.value || null;
         }
         // Update seed transaction
         const seedAmt2 = parseKRW(seedInput?.value);
@@ -261,6 +298,7 @@ function openAccountModal(accountId = null) {
         }
       } else {
         const newAccId = makeId('acc');
+        const openedAt = openDateInput.value || null;
         store.accounts.push({
           id:         newAccId,
           name,
@@ -270,6 +308,7 @@ function openAccountModal(accountId = null) {
           note:       noteInput.value.trim(),
           emoji:      selectedEmoji,
           isArchived: false,
+          openedAt,
           createdAt:  Date.now(),
         });
         const seedAmt = parseKRW(seedInput?.value);
@@ -277,7 +316,7 @@ function openAccountModal(accountId = null) {
           store.transactions.push({
             id:        makeId('txn'),
             accountId: newAccId,
-            date:      toDateStr(new Date()),
+            date:      openedAt ?? toDateStr(new Date()),
             type:      'deposit',
             isSeed:    true,
             amount:    seedAmt,

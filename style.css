@@ -71,6 +71,12 @@
 /* ── Reset ───────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+  scrollbar-gutter: stable;
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar { display: none; }
+
 body {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
                'Malgun Gothic', sans-serif;
@@ -191,8 +197,8 @@ body {
   border-color: var(--border);
   box-shadow: var(--shadow-xs);
 }
-.btn-danger  { background: var(--danger-light); color: var(--danger); border-color: #FACACA; }
-.btn-ghost   { background: transparent; color: var(--text-muted); border-color: var(--border); }
+.btn-danger  { background: var(--danger-light); color: var(--danger); border-color: #FACACA; box-shadow: var(--shadow-xs); }
+.btn-ghost   { background: transparent; color: var(--text-muted); border-color: var(--border); box-shadow: var(--shadow-xs); }
 .btn-sm  { padding: 5px 12px; font-size: 13px; border-radius: 8px; }
 .btn-lg  { padding: 13px 26px; font-size: 16px; border-radius: 12px; }
 
@@ -293,10 +299,7 @@ body {
   letter-spacing: -0.5px;
 }
 .card-currency {
-  font-size: 0.55em;
-  font-weight: 700;
-  align-self: flex-start;
-  padding-top: 0.15em;
+  margin-left: 0.18em;
   letter-spacing: 0;
 }
 .account-card-pl {
@@ -393,6 +396,72 @@ body {
   padding: 16px;
   box-shadow: var(--shadow-sm);
 }
+
+/* ── Account detail stat panel ───────────────────────────────── */
+.account-stat-panel {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 24px;
+  margin-bottom: 28px;
+}
+.account-stat-main-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.account-stat-main-value {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+.account-stat-suffix {
+  margin-left: 0.18em;
+}
+.stat-amt-suffix {
+  margin-left: 0.18em;
+}
+.account-stat-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
+.account-stat-sub-row {
+  display: flex;
+  align-items: stretch;
+}
+.account-stat-sub { flex: 1; min-width: 0; }
+.account-stat-vsep {
+  width: 1px;
+  background: var(--border);
+  margin: 0 16px;
+  flex-shrink: 0;
+}
+.account-stat-sub-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+  white-space: nowrap;
+}
+.account-stat-sub-value {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  word-break: break-all;
+}
+@media (max-width: 640px) {
+  .account-stat-main-value { font-size: 24px; }
+  .account-stat-vsep { margin: 0 10px; }
+}
 .stat-label {
   font-size: 11px;
   color: var(--text-faint);
@@ -487,10 +556,12 @@ body {
   max-width: 480px;
   max-height: 90vh;
   overflow-y: auto;
+  scrollbar-width: none;
   padding: 28px 28px 24px;
   box-shadow: var(--shadow-lg);
   animation: modalIn 0.2s cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
+.modal::-webkit-scrollbar { display: none; }
 
 @keyframes modalIn {
   from { opacity: 0; transform: scale(0.95) translateY(8px); }
@@ -666,12 +737,9 @@ body {
   gap: 2px;
 }
 .dash-total-currency {
-  font-size: 0.42em;
-  font-weight: 800;
+  margin-left: 0.15em;
   letter-spacing: 0;
   line-height: 1;
-  align-self: flex-start;
-  padding-top: 0.18em;
 }
 .dash-return-row {
   display: flex;
@@ -1427,12 +1495,21 @@ button, a, [role="button"] { touch-action: manipulation; }
   border-color: var(--text-primary);
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text-primary);
 }
-.cpicker-swatch-rand {
-  background: #fff;
-  border-color: #D1D5DB;
-  color: #9CA3AF;
-  font-size: 16px; line-height: 1;
-  text-shadow: none;
+.cpicker-rand-btn {
+  flex-shrink: 0;
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 17px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.cpicker-rand-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(21,87,239,0.06);
 }
 .cpicker-swatch-rainbow {
   border: none;
@@ -1549,10 +1626,6 @@ button, a, [role="button"] { touch-action: manipulation; }
 .emoji-btn-sm { width: 44px; height: 44px; font-size: 22px; }
 .emoji-btn:hover { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(21,87,239,0.10); }
 .emoji-panel-inline {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 200;
   min-width: 280px;
 }
 .emoji-picker-panel {
@@ -1595,21 +1668,29 @@ button, a, [role="button"] { touch-action: manipulation; }
 
 .account-card-star {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 10px;
+  right: 10px;
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 17px;
-  color: #D1D5DB;
-  padding: 4px 5px;
-  line-height: 1;
+  padding: 5px;
+  line-height: 0;
   z-index: 2;
-  transition: color 0.15s, transform 0.15s;
+  border-radius: 8px;
+  color: #CBD5E1;
+  transition: color 0.15s, background 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
-.account-card-star:hover { color: var(--warning); transform: scale(1.2); }
-.account-card-star.starred { color: var(--warning); }
+.account-card-star svg {
+  display: block;
+  transition: fill 0.15s, stroke 0.15s;
+}
+.account-card-star:hover {
+  color: #F59E0B;
+  background: rgba(245, 158, 11, 0.08);
+}
+.account-card-star.starred { color: #F59E0B; }
+.account-card-star.starred svg { fill: #F59E0B; }
 
 /* ── Dashboard horizontal account card ──────────────────────── */
 .dash-account-list { display: flex; flex-direction: column; gap: 10px; }
@@ -1797,6 +1878,7 @@ button, a, [role="button"] { touch-action: manipulation; }
   background: var(--success);
   color: #fff;
   border: none;
+  box-shadow: var(--shadow-xs);
 }
 .btn-success:hover { background: #00a868; }
 
@@ -1825,8 +1907,9 @@ button, a, [role="button"] { touch-action: manipulation; }
   border: 1.5px solid var(--border);
   background: var(--bg);
   color: var(--text-secondary);
+  font-family: inherit;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s, color 0.15s;
   -webkit-tap-highlight-color: transparent;
