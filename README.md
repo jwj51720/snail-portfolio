@@ -4,6 +4,22 @@
 
 ---
 
+## 🚀 바로 사용하기
+
+<p align="center">
+  <a href="https://jwj51720.github.io/snail-portfolio/" target="_blank">
+    <img src="https://img.shields.io/badge/Github_Pages-snail--portfolio-2ea44f?style=for-the-badge&logo=githubpages&logoColor=white" />
+  </a>
+</p>
+
+| 사용 옵션 | 설명 |
+|---|---|
+| 🌐 배포 링크 접속 | GitHub Pages로 배포된 버전을 바로 사용 |
+| 📁 파일 직접 실행 | Repository Clone 후 `index.html`을 브라우저에서 열어 사용 |
+| 🖥️ 로컬 서버 실행 | 직접 로컬 서버를 띄워 사용 |
+
+---
+
 > **🔒 데이터 보안 안내**
 >
 > 입력한 모든 데이터는 **사용자 본인의 브라우저 내부 저장소에만 보관**됩니다.
