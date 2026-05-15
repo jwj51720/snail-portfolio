@@ -215,6 +215,10 @@ function renderDashboard() {
   // ── Account summary ───────────────────────────────────────
   wrap.appendChild(renderAccountSummary(active));
 
+  // ── Growth simulation card ────────────────────────────────
+  const growthCard = renderGrowthCard(startDate, periodLabel);
+  if (growthCard) wrap.appendChild(growthCard);
+
   // ── Goal projection card ──────────────────────────────────
   const goalCard = renderGoalProjectionCard();
   if (goalCard) wrap.appendChild(goalCard);
@@ -278,6 +282,25 @@ function renderPeriodBar() {
   return wrap;
 }
 
+// ─── Deposit streak (consecutive months with ≥1 non-seed deposit) ────────────
+function computeDepositStreak() {
+  const deposits = store.transactions.filter(t => !t.isSeed && t.type === 'deposit');
+  if (deposits.length === 0) return 0;
+
+  const months = new Set(deposits.map(t => t.date.substring(0, 7)));
+  const latest = [...months].sort().at(-1);
+
+  let streak = 1;
+  let [y, m] = latest.split('-').map(Number);
+  while (true) {
+    m--;
+    if (m === 0) { m = 12; y--; }
+    if (months.has(`${y}-${String(m).padStart(2, '0')}`)) streak++;
+    else break;
+  }
+  return streak;
+}
+
 // ─── Hero section ─────────────────────────────────────────────────────────────
 function renderHero(totalAssets, ret, plAbs, startInterpolated, periodLabel) {
   const hero = h('div', { className: 'dash-hero' });
@@ -323,6 +346,15 @@ function renderHero(totalAssets, ret, plAbs, startInterpolated, periodLabel) {
   }
 
   hero.appendChild(retRow);
+
+  const streak = computeDepositStreak();
+  if (streak >= 2) {
+    hero.appendChild(h('div', {
+      className: 'dash-streak',
+      textContent: `🐌 ${streak}개월 연속 투자 중`,
+    }));
+  }
+
   return hero;
 }
 
@@ -533,6 +565,114 @@ function renderAccountCardHorizontal(acc) {
   content.appendChild(bottom);
 
   card.appendChild(content);
+  return card;
+}
+
+// ─── Compound growth simulation (period-based, matches period selector) ───────
+function computeGrowthProjection(startDate, periodLabel) {
+  const active = store.accounts.filter(a => !a.isArchived);
+  if (active.length === 0) return null;
+
+  const today = toDateStr(new Date());
+  const currentValue = active.reduce((s, a) => s + getCurrentValuation(a.id, store.transactions), 0);
+  if (currentValue <= 0) return null;
+
+  // Period month count
+  const [sy, sm] = startDate.split('-').map(Number);
+  const now = new Date();
+  const periodMonths = Math.max(1,
+    (now.getFullYear() - sy) * 12 + (now.getMonth() + 1 - sm)
+  );
+  if (periodMonths < 1) return null;
+
+  // Monthly average NET deposit within the period (all active accounts)
+  const periodTxns = store.transactions.filter(t =>
+    !t.isSeed && active.some(a => a.id === t.accountId) &&
+    t.date >= startDate && t.date <= today &&
+    (t.type === 'deposit' || t.type === 'withdraw')
+  );
+  const periodNet = periodTxns.reduce((s, t) =>
+    s + (t.type === 'deposit' ? t.amount : -t.amount), 0);
+  const avgMonthlyDeposit = periodNet / periodMonths;
+
+  // Period return rate → annualise
+  const { ret } = store.ui.useTWR
+    ? getPortfolioTWR(startDate, today)
+    : getPortfolioReturn(startDate, today);
+
+  // If no ratio return (start value 0 or no data) fall back to net-deposit method
+  let annualReturn;
+  if (ret !== null) {
+    const periodYears = periodMonths / 12;
+    annualReturn = periodYears >= 1
+      ? Math.pow(1 + ret / 100, 1 / periodYears) - 1
+      : (ret / 100) / Math.max(periodYears, 1 / 12);
+  } else {
+    // fallback: use all-time net deposit ratio
+    const netDep = active.reduce((s, a) => s + getNetDeposit(a.id, store.transactions), 0);
+    if (netDep <= 0) return null;
+    const totalRatio = (currentValue - netDep) / netDep;
+    annualReturn = totalRatio;
+  }
+  // Cap to prevent absurd projections from very short history
+  annualReturn = Math.max(-0.50, Math.min(2.00, annualReturn));
+  const monthlyReturn = Math.pow(1 + annualReturn, 1 / 12) - 1;
+
+  const projections = {};
+  for (const yr of [1, 3, 5, 10]) {
+    let v = currentValue;
+    for (let i = 0; i < yr * 12; i++) v = v * (1 + monthlyReturn) + avgMonthlyDeposit;
+    projections[yr] = Math.max(0, Math.round(v));
+  }
+
+  const retSign = annualReturn >= 0 ? '+' : '';
+  const retMethod = store.ui.useTWR ? 'TWR' : '단순수익률';
+
+  return {
+    currentValue, avgMonthlyDeposit: Math.round(avgMonthlyDeposit),
+    annualReturnPct: annualReturn * 100, projections,
+    periodLabel, periodMonths, retMethod, retSign,
+  };
+}
+
+function renderGrowthCard(startDate, periodLabel) {
+  const proj = computeGrowthProjection(startDate, periodLabel);
+  if (!proj) return null;
+
+  const { currentValue, avgMonthlyDeposit, annualReturnPct, projections,
+          retSign, retMethod } = proj;
+
+  const card = h('div', { className: 'dash-card' });
+  card.appendChild(
+    h('div', { className: 'dash-card-header' },
+      h('h3', { className: 'dash-card-title', textContent: '이 속도라면' }),
+      h('span', { className: 'dash-growth-badge', textContent: `${periodLabel} 기준` })
+    )
+  );
+
+  // Two-line meta: data source + assumptions
+  const meta = h('div', { className: 'dash-growth-meta' });
+  meta.appendChild(h('div', { textContent: `전체 활성 계좌 합산 · ${periodLabel} 기간 기준` }));
+  meta.appendChild(h('div', { textContent:
+    `월 평균 순투자 ${formatKRW(avgMonthlyDeposit)} · ${retMethod} 연환산 ${retSign}${annualReturnPct.toFixed(1)}% 복리`,
+  }));
+  card.appendChild(meta);
+
+  const row = h('div', { className: 'dash-growth-row' });
+  for (const [yr, label] of [[1, '1년 후'], [3, '3년 후'], [5, '5년 후'], [10, '10년 후']]) {
+    const val     = projections[yr];
+    const gain    = val - currentValue;
+    const gainPct = currentValue > 0 ? ((gain / currentValue) * 100).toFixed(0) : '0';
+    const gainSign  = gain >= 0 ? '+' : '';
+    const gainClass = gain >= 0 ? 'text-profit' : 'text-loss';
+
+    const col = h('div', { className: 'dash-growth-col' });
+    col.appendChild(h('div', { className: 'dash-growth-label', textContent: label }));
+    col.appendChild(h('div', { className: 'dash-growth-value', textContent: formatKRW(val) }));
+    col.appendChild(h('div', { className: `dash-growth-gain ${gainClass}`, textContent: `${gainSign}${gainPct}%` }));
+    row.appendChild(col);
+  }
+  card.appendChild(row);
   return card;
 }
 

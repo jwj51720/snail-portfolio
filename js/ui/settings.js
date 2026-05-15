@@ -162,12 +162,77 @@ function buildTWRSection() {
   const row = h('div', { className: 'settings-toggle-row' });
 
   const labelWrap = h('div', {});
-  labelWrap.appendChild(h('div', { className: 'settings-row-title',
-    textContent: '시간가중수익률 (TWR) 사용' }));
+
+  // Title row: label + info (?) button
+  const titleRow = h('div', { className: 'settings-twr-title-row' });
+  titleRow.appendChild(h('span', { className: 'settings-row-title', textContent: '시간가중수익률 (TWR) 사용' }));
+
+  const infoBtn = h('button', { type: 'button', className: 'twr-info-btn', 'aria-label': 'TWR 설명' });
+  infoBtn.textContent = '?';
+  titleRow.appendChild(infoBtn);
+  labelWrap.appendChild(titleRow);
   labelWrap.appendChild(h('div', { className: 'settings-row-desc',
     textContent: '입출금의 영향을 제거한 TWR로 수익률을 표시합니다.' }));
   row.appendChild(labelWrap);
 
+  // ── Tooltip card (portaled to body, position:fixed) ──────────────────────
+  const tooltipEl = document.createElement('div');
+  tooltipEl.className = 'twr-tooltip-card';
+  tooltipEl.innerHTML =
+    '<div class="twr-tip-heading">수익률 계산 방식 비교</div>' +
+    '<div class="twr-tip-grid">' +
+      '<div class="twr-tip-col">' +
+        '<div class="twr-tip-mode-badge off">OFF</div>' +
+        '<div class="twr-tip-mode-name">단순수익률</div>' +
+        '<ul class="twr-tip-list">' +
+          '<li>수익금 ÷ 순투입금</li>' +
+          '<li>입출금 타이밍에 영향받음</li>' +
+          '<li>직관적·이해하기 쉬움</li>' +
+        '</ul>' +
+      '</div>' +
+      '<div class="twr-tip-divider"></div>' +
+      '<div class="twr-tip-col">' +
+        '<div class="twr-tip-mode-badge on">ON · TWR</div>' +
+        '<div class="twr-tip-mode-name">시간가중수익률</div>' +
+        '<ul class="twr-tip-list">' +
+          '<li>구간별 수익률의 곱셈</li>' +
+          '<li>입출금 타이밍 영향 제거</li>' +
+          '<li>펀드 평가의 국제 표준</li>' +
+        '</ul>' +
+      '</div>' +
+    '</div>' +
+    '<div class="twr-tip-recommend">🐌 적립식에서는 <strong>TWR</strong>이 적합합니다.</div>';
+  document.body.appendChild(tooltipEl);
+
+  let hideTimer;
+  const showTip = () => {
+    clearTimeout(hideTimer);
+    const rect = infoBtn.getBoundingClientRect();
+    const W = 400;
+    let left = rect.left + rect.width / 2 - W / 2;
+    left = Math.max(12, Math.min(left, window.innerWidth - W - 12));
+    tooltipEl.style.width = W + 'px';
+    tooltipEl.style.left  = left + 'px';
+    tooltipEl.style.top   = (rect.bottom + 10) + 'px';
+    tooltipEl.classList.add('twr-tip-visible');
+  };
+  const hideTip = () => { hideTimer = setTimeout(() => tooltipEl.classList.remove('twr-tip-visible'), 80); };
+
+  infoBtn.addEventListener('mouseenter', showTip);
+  infoBtn.addEventListener('mouseleave', hideTip);
+  tooltipEl.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+  tooltipEl.addEventListener('mouseleave', hideTip);
+
+  // Remove tooltip from body when settings page unmounts
+  const appEl = document.getElementById('app');
+  if (appEl) {
+    const obs = new MutationObserver(() => {
+      if (!document.body.contains(infoBtn)) { tooltipEl.remove(); obs.disconnect(); }
+    });
+    obs.observe(appEl, { childList: true });
+  }
+
+  // ── Toggle ────────────────────────────────────────────────────────────────
   const toggle = h('label', { className: 'toggle-switch' });
   const checkbox = h('input', { type: 'checkbox' });
   if (store.ui.useTWR) checkbox.checked = true;

@@ -768,12 +768,71 @@ body {
   color: rgba(255,255,255,0.4);
 }
 
+/* Streak line in hero */
+.dash-streak {
+  margin-top: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.2px;
+}
+
 /* Override P/L colors inside dark hero */
 .dash-hero .text-profit  { color: #3DDBA8; }
 .dash-hero .text-loss    { color: #FF7272; }
 .dash-hero .text-neutral { color: rgba(255,255,255,0.55); }
 .dash-hero .dash-return-abs.text-profit { color: #3DDBA8; }
 .dash-hero .dash-return-abs.text-loss   { color: #FF7272; }
+
+/* Growth simulation card */
+.dash-growth-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+  background: var(--bg);
+  border-radius: 20px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+.dash-growth-meta {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin: -6px 0 18px;
+}
+.dash-growth-row {
+  display: flex;
+}
+.dash-growth-col {
+  flex: 1;
+  padding: 0 16px;
+  border-right: 1px solid var(--border-light);
+  text-align: center;
+}
+.dash-growth-col:first-child { padding-left: 0; }
+.dash-growth-col:last-child  { border-right: none; padding-right: 0; }
+.dash-growth-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 7px;
+}
+.dash-growth-value {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  letter-spacing: -0.4px;
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+.dash-growth-gain {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 
 /* Generic dashboard card */
 .dash-card {
@@ -1081,6 +1140,89 @@ body {
 
 .settings-row-title { font-size: 14px; font-weight: 700; color: var(--text-secondary); margin-bottom: 2px; letter-spacing: -0.2px; }
 .settings-row-desc  { font-size: 12px; color: var(--text-muted); }
+
+/* TWR info button + tooltip */
+.settings-twr-title-row { display: flex; align-items: center; gap: 7px; margin-bottom: 2px; }
+.settings-twr-title-row .settings-row-title { margin-bottom: 0; }
+
+.twr-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.twr-info-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+.twr-tooltip-card {
+  position: fixed;
+  z-index: 9200;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(12,24,41,0.14), 0 3px 10px rgba(12,24,41,0.07);
+  padding: 18px 20px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.twr-tooltip-card.twr-tip-visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+.twr-tip-heading {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 14px;
+}
+.twr-tip-grid { display: flex; margin-bottom: 14px; }
+.twr-tip-col { flex: 1; }
+.twr-tip-col:first-child { padding-right: 16px; }
+.twr-tip-col:last-child  { padding-left: 16px; }
+.twr-tip-divider { width: 1px; background: var(--border-light); flex-shrink: 0; }
+
+.twr-tip-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 7px;
+}
+.twr-tip-mode-badge.off { background: var(--bg); color: var(--text-muted); }
+.twr-tip-mode-badge.on  { background: var(--primary-light); color: var(--primary); }
+
+.twr-tip-mode-name { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+
+.twr-tip-list { margin: 0; padding-left: 15px; }
+.twr-tip-list li { font-size: 12px; color: var(--text-secondary); line-height: 1.65; }
+
+.twr-tip-recommend {
+  background: var(--primary-light);
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
+  white-space: nowrap;
+}
+.twr-tip-recommend strong { color: var(--primary); }
 
 .toggle-switch {
   position: relative;
